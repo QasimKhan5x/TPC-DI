@@ -163,7 +163,7 @@ CREATE TABLE DimTrade (
     BatchID SMALLINT UNSIGNED NOT NULL,
     PRIMARY KEY (TradeID)
 );
-CREATE TABLE DIMessage (
+CREATE TABLE DImessages (
     MessageDateAndTime DATETIME NOT NULL,
     BatchID SMALLINT UNSIGNED NOT NULL,
     MessageSource CHAR(30),
