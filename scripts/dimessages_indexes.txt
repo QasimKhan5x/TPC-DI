@@ -1,0 +1,3 @@
+CREATE INDEX idx_batchid ON dimessages (BatchID);
+CREATE INDEX idx_messagesource ON dimessages (MessageSource(30));
+CREATE INDEX idx_messagetype ON dimessages (MessageType(12));

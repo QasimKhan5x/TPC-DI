@@ -17,7 +17,8 @@ from scripts.util import execute_batch_validation
 host = "localhost"
 user = "root"
 password = "password"
-database = "tpcdi_sf5"
+sf = 5
+database = f"tpcdi_sf{sf}"
 
 # Create the SQLAlchemy engine
 engine = create_engine(
@@ -198,7 +199,7 @@ def run_periodic_queries():
 
 
 def incremental_load(BATCH_ID):
-    DATA_DIR = f"data\\sf5\\Batch{BATCH_ID}\\"
+    DATA_DIR = f"data\\sf{sf}\\Batch{BATCH_ID}\\"
 
     with open(DATA_DIR + "BatchDate.txt") as f:
         BATCH_DATE = f.read().strip()
@@ -256,7 +257,7 @@ def incremental_load(BATCH_ID):
         "C_F_NAME": "str",
         "C_M_NAME": "str",
         "C_GNDR": "category",
-        "C_TIER": "int64",
+        "C_TIER": "UInt32",
         "C_DOB": "str",
         "C_ADLINE1": "str",
         "C_ADLINE2": "str",
@@ -760,6 +761,7 @@ def incremental_load(BATCH_ID):
             + ", C_TIER = "
             + invalid_tiers["Tier"].astype(str)
         )
+        invalid_tiers.drop(columns=["CustomerID", "Tier"], inplace=True)
 
         sql_dtypes = {
             "MessageDateAndTime": sqlalchemy.types.DATETIME,
@@ -795,6 +797,7 @@ def incremental_load(BATCH_ID):
             + ", C_DOB = "
             + invalid_tiers["DOB"].astype(str)
         )
+        invalid_dobs = invalid_dobs[["MessageDateAndTime", "BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"]]
 
         sql_dtypes = {
             "MessageDateAndTime": sqlalchemy.types.DATETIME,
@@ -1636,7 +1639,7 @@ def incremental_load(BATCH_ID):
         )
         """,
         f"""
-        LOAD DATA LOCAL INFILE 'E:\\\\Documents\\\\BDMA\\\\ULB\\\\Data Warehouses\\\\tpc-di\\\\TPC-DI\\\\data\\\\sf5\\\\Batch{BATCH_ID}\\\\HoldingHistory.txt'
+        LOAD DATA LOCAL INFILE 'E:\\\\Documents\\\\BDMA\\\\ULB\\\\Data Warehouses\\\\tpc-di\\\\TPC-DI\\\\data\\\\sf{sf}\\\\Batch{BATCH_ID}\\\\HoldingHistory.txt'
         INTO TABLE TempHoldingHistory
         FIELDS TERMINATED BY '|'
         LINES TERMINATED BY '\n'

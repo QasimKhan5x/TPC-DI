@@ -293,6 +293,5 @@ CREATE TABLE Audit (
     Date DATE,
     Attribute CHAR(50) NOT NULL,
     Value BIGINT,
-    DValue DECIMAL(15, 5),
-    PRIMARY KEY (DataSet, Attribute)
+    DValue DECIMAL(16, 5)
 );

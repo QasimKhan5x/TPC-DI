@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 host = "localhost"
 user = "root"
 password = "password"
-sf = 3
+sf = 5
 database = f"tpcdi_sf{sf}"
 
 # Create the SQLAlchemy engine
@@ -25,6 +25,14 @@ engine = create_engine(
     f"mysql+mysqlconnector://{user}:{password}@{host}/{database}?allow_local_infile=true"
 )
 
+with open("scripts\\preparation.sql") as f:
+    queries = f.read().split(";")
+with engine.connect() as cxn:
+    for query in queries:
+        if len(query.strip()) > 0:
+            cxn.execute(text(query + ";"))
+
+execute_batch_validation(engine)
 
 # ## Historical Load
 start_time = datetime.now()
@@ -112,7 +120,7 @@ dtypes = {
 }
 
 
-create_table = """CREATE TABLE DimDate (
+create_table = """CREATE TABLE IF NOT EXISTS DimDate (
     SK_DateID INT UNSIGNED NOT NULL,
     DateValue DATE NOT NULL,
     DateDesc CHAR(20) NOT NULL,
@@ -194,7 +202,7 @@ dtypes = {
 }
 
 
-create_table = """CREATE TABLE DimTime (
+create_table = """CREATE TABLE IF NOT EXISTS DimTime (
     SK_TimeID INT UNSIGNED NOT NULL,
     TimeValue TIME(3) NOT NULL,
     HourID TINYINT UNSIGNED NOT NULL,
@@ -235,7 +243,7 @@ sql_dtypes = {
 }
 
 
-create_table = """CREATE TABLE Industry (
+create_table = """CREATE TABLE IF NOT EXISTS Industry (
     IN_ID CHAR(2) NOT NULL,
     IN_NAME CHAR(50) NOT NULL,
     IN_SC_ID CHAR(4) NOT NULL,
@@ -273,7 +281,7 @@ sql_dtypes = {
 with engine.connect() as conn:
     conn.execute(
         text(
-            """CREATE TABLE StatusType (
+            """CREATE TABLE IF NOT EXISTS StatusType (
     ST_ID CHAR(4) NOT NULL,
     ST_NAME CHAR(10) NOT NULL,
     PRIMARY KEY (ST_ID)
@@ -315,7 +323,7 @@ dtypes = {
 with engine.connect() as conn:
     conn.execute(
         text(
-            """CREATE TABLE TradeType (
+            """CREATE TABLE IF NOT EXISTS TradeType (
     TT_ID CHAR(3) NOT NULL,
     TT_NAME CHAR(12) NOT NULL,
     TT_IS_SELL TINYINT UNSIGNED NOT NULL CHECK (TT_IS_SELL IN (0, 1)),
@@ -352,7 +360,7 @@ sql_dtypes = {
 with engine.connect() as conn:
     conn.execute(
         text(
-            """CREATE TABLE TaxRate (
+            """CREATE TABLE IF NOT EXISTS TaxRate (
     TX_ID CHAR(4) NOT NULL,
     TX_NAME CHAR(50) NOT NULL,
     TX_RATE DECIMAL(6, 5) NOT NULL,
@@ -445,7 +453,7 @@ dtypes = {
 }
 
 
-create_table = """CREATE TABLE DimBroker (
+create_table = """CREATE TABLE IF NOT EXISTS DimBroker (
     SK_BrokerID INT UNSIGNED NOT NULL,
     BrokerID INT UNSIGNED NOT NULL,
     ManagerID INT UNSIGNED,
@@ -638,7 +646,7 @@ def load_dimcompany(filename, is_first_batch=False):
     # For address fields
     dimCompany["AddressLine1"] = df_cmp["AddrLine1"].str.strip()
     dimCompany["AddressLine2"] = df_cmp["AddrLine2"].str.strip()
-    dimCompany["PostalCode"] = df_cmp["PostalCode"].str.strip()
+    dimCompany["PostalCode"] = df_cmp["PostalCode"].astype(str).str.strip()
     dimCompany["City"] = df_cmp["City"].str.strip()
     dimCompany["StateProv"] = df_cmp["StateProvince"].str.strip()
     dimCompany["Country"] = df_cmp["Country"].str.strip()
@@ -770,7 +778,7 @@ def load_dimcompany(filename, is_first_batch=False):
     return df_cmp, new_records, existing_records
 
 
-create_table = """CREATE TABLE DimCompany (
+create_table = """CREATE TABLE IF NOT EXISTS DimCompany (
     SK_CompanyID INT UNSIGNED NOT NULL,
     CompanyID INT UNSIGNED NOT NULL,
     Status CHAR(10) NOT NULL,
@@ -890,43 +898,43 @@ def load_financial():
 
         # copy directly
         financial_df["FI_YEAR"] = pd.to_numeric(
-            df_fin["Year"].str.strip(), downcast="unsigned"
+            df_fin["Year"], downcast="unsigned"
         )
         financial_df["FI_QTR"] = pd.to_numeric(
-            df_fin["Quarter"].str.strip(), downcast="unsigned"
+            df_fin["Quarter"], downcast="unsigned"
         )
         financial_df["FI_QTR_START_DATE"] = pd.to_datetime(
             df_fin["QtrStartDate"], format="%Y%m%d"
         )
         financial_df["FI_REVENUE"] = pd.to_numeric(
-            df_fin["Revenue"].str.strip(), downcast="float"
+            df_fin["Revenue"], downcast="float"
         )
         financial_df["FI_NET_EARN"] = pd.to_numeric(
-            df_fin["Earnings"].str.strip(), downcast="float"
+            df_fin["Earnings"], downcast="float"
         )
         financial_df["FI_BASIC_EPS"] = pd.to_numeric(
-            df_fin["EPS"].str.strip(), downcast="float"
+            df_fin["EPS"], downcast="float"
         )
         financial_df["FI_DILUT_EPS"] = pd.to_numeric(
-            df_fin["DilutedEPS"].str.strip(), downcast="float"
+            df_fin["DilutedEPS"], downcast="float"
         )
         financial_df["FI_MARGIN"] = pd.to_numeric(
-            df_fin["Margin"].str.strip(), downcast="float"
+            df_fin["Margin"], downcast="float"
         )
         financial_df["FI_INVENTORY"] = pd.to_numeric(
             df_fin["Inventory"].str.strip(), downcast="float"
         )
         financial_df["FI_ASSETS"] = pd.to_numeric(
-            df_fin["Assets"].str.strip(), downcast="float"
+            df_fin["Assets"], downcast="float"
         )
         financial_df["FI_LIABILITY"] = pd.to_numeric(
-            df_fin["Liabilities"].str.strip(), downcast="float"
+            df_fin["Liabilities"], downcast="float"
         )
         financial_df["FI_OUT_BASIC"] = pd.to_numeric(
-            df_fin["ShOut"].str.strip(), downcast="unsigned"
+            df_fin["ShOut"], downcast="unsigned"
         )
         financial_df["FI_OUT_DILUT"] = pd.to_numeric(
-            df_fin["DilutedShOut"].str.strip(), downcast="unsigned"
+            df_fin["DilutedShOut"], downcast="unsigned"
         )
 
         # Split df_fin based on the length of CoNameOrCIK
@@ -991,7 +999,7 @@ def load_financial():
         )
 
 
-create_table = """CREATE TABLE Financial (
+create_table = """CREATE TABLE IF NOT EXISTS Financial (
     SK_CompanyID INT UNSIGNED NOT NULL,
     FI_YEAR YEAR NOT NULL,
     FI_QTR TINYINT UNSIGNED NOT NULL CHECK (FI_QTR IN (1, 2, 3, 4)),
@@ -1232,7 +1240,7 @@ def load_dimsecurity():
             next_sk_id += 1
 
 
-create_table = """CREATE TABLE DimSecurity (
+create_table = """CREATE TABLE IF NOT EXISTS DimSecurity (
     SK_SecurityID INT UNSIGNED NOT NULL,
     Symbol CHAR(15) NOT NULL,
     Issue CHAR(6) NOT NULL,
@@ -2236,7 +2244,7 @@ dimCustomer_df["EffectiveDate"] = pd.to_datetime(
 dimCustomer_df["EndDate"] = pd.to_datetime(dimCustomer_df["EndDate"]).dt.date
 
 
-create_table = """CREATE TABLE DimCustomer (
+create_table = """CREATE TABLE IF NOT EXISTS DimCustomer (
     SK_CustomerID INT UNSIGNED NOT NULL,
     CustomerID INT UNSIGNED NOT NULL,
     TaxID CHAR(20) NOT NULL,
@@ -2346,7 +2354,7 @@ sql_dtypes = {
 }
 
 
-create_table = """CREATE TABLE Prospect (
+create_table = """CREATE TABLE IF NOT EXISTS Prospect (
     AgencyID CHAR(30) NOT NULL,
     SK_RecordDateID INT UNSIGNED NOT NULL,
     SK_UpdateDateID INT UNSIGNED NOT NULL,
@@ -2671,7 +2679,7 @@ sql_dtypes = {
 }
 
 
-create_table = """CREATE TABLE DimAccount (
+create_table = """CREATE TABLE IF NOT EXISTS DimAccount (
     SK_AccountID INT UNSIGNED NOT NULL,
     AccountID INT UNSIGNED NOT NULL,
     SK_BrokerID INT UNSIGNED NOT NULL,
@@ -2945,7 +2953,7 @@ sql_dtypes = {
 }
 
 
-create_table = """CREATE TABLE DimTrade (
+create_table = """CREATE TABLE IF NOT EXISTS DimTrade (
     TradeID INT UNSIGNED NOT NULL,
     SK_BrokerID INT UNSIGNED,
     SK_CreateDateID INT UNSIGNED NOT NULL,
@@ -3146,7 +3154,7 @@ cash_txn_df = cash_txn_df[keep_cols]
 cash_txn_df["BatchID"] = 1
 
 
-create_table = """CREATE TABLE FactCashBalances (
+create_table = """CREATE TABLE IF NOT EXISTS FactCashBalances (
     SK_CustomerID INT UNSIGNED NOT NULL,
     SK_AccountID INT UNSIGNED NOT NULL,
     SK_DateID INT UNSIGNED NOT NULL,
@@ -3197,7 +3205,7 @@ sql_commands = [
     """,
     "DROP TABLE IF EXISTS FactHoldings",
     """
-    CREATE TABLE FactHoldings (
+    CREATE TABLE IF NOT EXISTS FactHoldings (
         TradeID INT UNSIGNED NOT NULL,
         CurrentTradeID INT UNSIGNED NOT NULL,
         SK_CustomerID INT UNSIGNED NOT NULL,
@@ -3455,7 +3463,7 @@ for i in trange(0, dailymarket_df.shape[0], 100000):
 
 sql_commands = [
     "CREATE INDEX idx_sk_companyid ON tempfactmarketprice(SK_CompanyID);",
-    """CREATE TABLE FactMarketHistory (
+    """CREATE TABLE IF NOT EXISTS FactMarketHistory (
         SK_SecurityID INT UNSIGNED NOT NULL,
         SK_CompanyID INT UNSIGNED NOT NULL,
         SK_DateID INT UNSIGNED NOT NULL,
@@ -3580,7 +3588,7 @@ sql_dtypes = {
 }
 
 
-create_table = """CREATE TABLE FactWatches (
+create_table = """CREATE TABLE IF NOT EXISTS FactWatches (
     SK_CustomerID INT UNSIGNED NOT NULL,
     SK_SecurityID INT UNSIGNED NOT NULL,
     SK_DateID_DatePlaced INT UNSIGNED NOT NULL,
