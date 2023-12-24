@@ -6,7 +6,7 @@ This repository contains the implementation of TPC-DI Benchmark V1.1.0 using Pyt
 
 Ensure you have installed the latest version of MySQL Community Server. Then, create a new environment, preferably with `conda`, and install the requisite packages: 
 
-    conda create -n tpcdi python=3.8 -y
+    conda create -n tpcdi python=3.10 -y
     conda activate tpcdi
     pip install -r requirements.txt
 
