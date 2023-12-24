@@ -16,3 +16,5 @@ The entire implementation can be found `etl.ipynb`. The notebook provides an int
 
     python -m scripts.historical
     python -m scripts.incremental
+
+Running the scripts allows measuring the elapsed time for each phase.
