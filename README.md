@@ -1,6 +1,6 @@
 # TPC-DI
 
-Contains implementation of TPC-DI Benchmark V1.1.0 using Python for ETL into MySQL.
+This repository contains the implementation of TPC-DI Benchmark V1.1.0 using Python for ETL into MySQL.
 
 ## Usage
 
@@ -18,3 +18,15 @@ The entire implementation can be found `etl.ipynb`. The notebook provides an int
     python -m scripts.incremental
 
 Running the scripts allows measuring the elapsed time for each phase.
+
+To prepare the `Audit` table for the automated audit phase, run the following:
+
+    python -m scripts.audit
+
+Run the automated audit by running `validation/tpcdi_audit.sql`. If all tests pass, then the benchmark has been implemented correctly.
+
+## Future Work
+
+- [ ] Prevent deadlocks in running visibility queries during incremental updates
+- [ ] Ensure all tests pass in audit
+
